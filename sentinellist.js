@@ -96,7 +96,7 @@ SentinelList.prototype = {
     },
 
     insert : function(iter, val) {
-    	this.insertAfter(val, iter.ref);
+    	this.insertBefore(val, iter.ref);
     },
     
     remove : function(ref) {

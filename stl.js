@@ -53,7 +53,7 @@ exports.Inserter.prototype = {
 
 	set : function(val) {
 		this.cont.insert(this.iter, val);
-		this.iter.next();
+		//this.iter.next();
 	},
 
 	next : function(){},
@@ -74,6 +74,17 @@ Array.prototype.insert = function(iter, val) {
 }
 
 // Alghoritms
+
+exports.advance = function(iter, steps) {
+	while (steps-- != 0) iter.next();
+	return iter;
+}
+
+exports.distance = function(i1, i2) {
+	var dist = 0;
+	while (!i1.equals(i2)) { i1.next(); dist++ }
+	return dist;
+}
 
 exports.swap = function(i1, i2) {
 	var tmp = i1.get();
