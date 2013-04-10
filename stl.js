@@ -53,7 +53,7 @@ exports.Inserter.prototype = {
 
 	set : function(val) {
 		this.cont.insert(this.iter, val);
-		//this.iter.next();
+		this.iter.next();
 	},
 
 	next : function(){},
@@ -120,6 +120,14 @@ exports.find = function(b, e, val) {
 		b.next();
 	}
 	return b;
+}
+
+exports.toArray = function(b, e) {
+	var ret = [];
+	while (!b.equals(e)) {
+		ret.push(b.next());
+	}
+	return ret;
 }
 
 return exports;
