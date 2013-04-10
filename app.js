@@ -1,15 +1,15 @@
-requirejs(['module1', 'stl', 'sentinellist'], function(foo, stl, List){
+requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d' ], function(foo, stl, List, math2d) {
 
-	function println(val) {
-		window.document.write(val + '<br>');
-	}
+  function println(val) {
+    window.document.write(val + '<br>');
+  }
+  var vec = math2d.vector;
+  var seg = math2d.segment;
 
-	var a = [1,2,3,4,5];
-	var b = new List(9,9,9,9,9);
-	var c = [9,9,9,9,9];
-
-	stl.copy     (a.begin(), a.end(), new stl.Inserter(b));
-	//stl.transform(b.begin(), b.end(), function(val) { return val + 11 });
-	var arr = stl.toArray(b.begin(), b.end());
-	println(arr);
-})
+  var s = new seg(new vec(0,0), new vec(10,0));
+  println(s);
+  s.flip();
+  println(s);
+  
+  println(s.contain(new vec(5,0)));
+});
