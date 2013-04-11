@@ -5,11 +5,17 @@ requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d' ], function(foo, stl, Li
   }
   var vec = math2d.vector;
   var seg = math2d.segment;
+  var line = math2d.line;
 
-  var s = new seg(new vec(0,0), new vec(10,0));
-  println(s);
-  s.flip();
-  println(s);
+  var segs = [new seg(new vec(-5, 2), new vec(4,8)), new seg(new vec(-2, 4), new vec(2,11))];
+  var refline = new line(new vec(1,0), 0);
+
+  var back = [];
+  var front = [];
+  stl.apply(segs.begin(), segs.end(), function(seg){
+    refline.splitSegment(seg, front, back, front, back);
+  });
   
-  println(s.contain(new vec(5,0)));
+  println(front);
+  println(back);
 });

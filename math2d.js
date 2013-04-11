@@ -120,27 +120,25 @@ define(function() {
       return this.normal.dot(point) + this.w;
     },
 
-    splitSegment : function(segment, colinearFront, colinearBack, front, back) {
+    splitSegment : function(seg, colinearFront, colinearBack, front, back) {
 
-      var intersect = this.intersect(segment.line);
+      var intersect = this.intersect(seg.line);
       if (intersect != null) {
-        var start = segment.start;
-        var end = segment.end;
-        var s_to_e = end.clonee().sub(start);
-        var sqlen = s_to_e.sqlength();
-        var t = intersect.clone().sub(start).dot(s_to_e) / sqlen;
+        var start = seg.start;
+        var end = seg.end;
+        var t = place(start, end, intersect);
         if (t <= EPSILON || t >= (1.0 - EPSILON)) {
-          (this.side(Math.abs(t) <= EPSILON ? end : start) >= 0.0 ? front : back).push(segment);
+          (this.side(Math.abs(t) <= EPSILON ? end : start) >= 0.0 ? front : back).push(seg);
         } else {
           var a = new segment(start, intersect);
           var b = new segment(intersect, end);
           (this.side(start) >= 0.0 ? front : back).push(a);
           (this.side(end) >= 0.0 ? front : back).push(b);
         }
-      } else if (this.side(segment.start) == 0.0) {
-        (this.normal.dot(segment.line.normal) >= 0.0 ? colinearFront : colinearBack).push(segment);
+      } else if (this.side(seg.start) == 0.0) {
+        (this.normal.dot(seg.line.normal) >= 0.0 ? colinearFront : colinearBack).push(seg);
       } else {
-        (this.side(segment.start) ? front : back).push(segment);
+        (this.side(seg.start) ? front : back).push(seg);
       }
     }
   };
@@ -149,7 +147,7 @@ define(function() {
     this.start = start.clone();
     this.end = end.clone();
 
-    var normal = this.end.clone().sub(this.start).normalize().ortho();
+    var normal = vecsub(this.end, this.start).normalize().ortho();
     var w = normal.dot(this.start);
     this.line = new line(normal, -w);
   };
@@ -190,18 +188,36 @@ define(function() {
       if (Math.abs(this.line.side(vertex)) > EPSILON)
         return false;
 
-      var start = this.start;
-      var end = this.end;
-      var s_to_e = end.clone().sub(start);
-      var sqlen = s_to_e.sqlength();
-      var t = vertex.clone().sub(start).dot(s_to_e) / sqlen;
-
+      var t = place(this.start, this.end, vertex);
       return !(t <= EPSILON || t >= (1.0 - EPSILON));
     },
 
     length : function() {
-      return this.end.clone().sub(this.start).length();
+      return vecsub(this.start, this.end).length();
     }
+  };
+
+  function vecadd(v1, v2) {
+    return v1.clone().add(v2);
+  };
+
+  function vecsub(v1, v2) {
+    return v1.clone().sub(v2);
+  };
+
+  function lerp(v1, v2, t) {
+    return v1.clone().add(v2.clone().substract(v2).scale(t));
+  };
+
+  function dot(v1, v2) {
+    return v1.dot(v2);
+  };
+
+  // v1      v3       v2
+  //  *-------*------->*
+  function place(v1, v2, v3) {
+    var diff = vecsub(v2, v1);
+    return vecsub(v3, v1).dot(diff) / diff.sqlength();
   };
 
   var exports = {
@@ -211,21 +227,11 @@ define(function() {
     line : line,
     segment : segment,
 
-    vecadd : function(v1, v2) {
-      return v1.clone().add(v2);
-    },
-
-    vecsub : function(v1, v2) {
-      return v1.clone().sub(v2);
-    },
-
-    lerp : function(v1, v2, t) {
-      return v1.clone().add(v2.clone().substract(v2).scale(t));
-    },
-
-    dot : function(v1, v2) {
-      return v1.dot(v2);
-    }
+    vecadd : vecadd,
+    vecsub : vecsub,
+    lerp : lerp,
+    dot : dot,
+    place : place
   };
 
   return exports;

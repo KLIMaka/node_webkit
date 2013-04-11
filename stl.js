@@ -112,6 +112,25 @@ define(function() {
     }
   };
 
+  exports.copy_if = function(ib, ie, ob, pred) {
+    while (!ib.equals(ie)) {
+      var val = ib.next();
+      if (pred(val)) {
+        ob.set(val);
+        ob.next();
+      }
+    }
+    return ob;
+  }
+
+  exports.transform_copy = function(ib. ie, ob, func) {
+    while (!ib.equals(ie)) {
+      ob.set(func(ib.next()));
+      ob.next();
+    }
+    return ob;
+  }
+
   exports.apply = function(b, e, func) {
     while (!b.equals(e)) {
       func(b.next());
