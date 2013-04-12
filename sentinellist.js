@@ -101,7 +101,7 @@ define(function() {
       this.insertAfter(tmp, iter.ref);
     },
 
-    remove : function(ref) {
+    _remove : function(ref) {
       if (ref === this.nil)
         return this;
 
@@ -109,6 +109,11 @@ define(function() {
       ref.prev.next = ref.next;
       ref.clear();
 
+      return this;
+    },
+
+    remove : function(iter) {
+      this._remove(iter.ref);
       return this;
     },
 
@@ -146,6 +151,15 @@ define(function() {
 
     end : function() {
       return new ListIterator(this, this.nil);
+    },
+
+    clear : function() {
+      var cur = this.nil.prev;
+      while (cur !== this.nil) {
+        var tmp = cur.prev;
+        cur.clear();
+        cur = tmp;
+      }
     },
 
     toArray : function() {

@@ -121,15 +121,15 @@ define(function() {
       }
     }
     return ob;
-  }
+  };
 
-  exports.transform_copy = function(ib. ie, ob, func) {
+  exports.transform_copy = function(ib, ie, ob, func) {
     while (!ib.equals(ie)) {
       ob.set(func(ib.next()));
       ob.next();
     }
     return ob;
-  }
+  };
 
   exports.apply = function(b, e, func) {
     while (!b.equals(e)) {
@@ -145,6 +145,15 @@ define(function() {
     }
     return b;
   };
+
+  exports.find_if = function(b, e, pred) {
+    while (!b.equals(e)) {
+      if (pred(b.get()))
+        return b;
+      b.next();
+    }
+    return b;
+  }
 
   exports.toArray = function(b, e) {
     var ret = [];

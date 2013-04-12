@@ -138,14 +138,14 @@ define(function() {
       } else if (this.side(seg.start) == 0.0) {
         (this.normal.dot(seg.line.normal) >= 0.0 ? colinearFront : colinearBack).push(seg);
       } else {
-        (this.side(seg.start) ? front : back).push(seg);
+        (this.side(seg.start) > 0.0 ? front : back).push(seg);
       }
     }
   };
 
   var segment = function(start, end) {
-    this.start = start.clone();
-    this.end = end.clone();
+    this.start = start;
+    this.end = end;
 
     var normal = vecsub(this.end, this.start).normalize().ortho();
     var w = normal.dot(this.start);
@@ -155,7 +155,7 @@ define(function() {
   segment.prototype = {
 
     clone : function() {
-      return new segment(this.start, this.end);
+      return new segment(this.start.clone(), this.end.clone());
     },
 
     flip : function() {
