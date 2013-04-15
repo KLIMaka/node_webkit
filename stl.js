@@ -52,7 +52,7 @@ define(function() {
     },
 
     set : function(val) {
-      this.cont.insert(this.iter, val);
+      this.iter = this.cont.insert(this.iter, val);
       this.iter.next();
     },
 
@@ -137,9 +137,20 @@ define(function() {
     }
   };
 
+  exports.rotate = function(b, m, e) {
+    var next = m.clone();
+    while (!b.equals(next)) {
+      exports.swap(b, next);
+      b.next();
+      next.next();
+      if (next.equals(e)) next = m.clone();
+      else if (b.equals(m)) m = next.clone();
+    }
+  }
+
   exports.find = function(b, e, val) {
     while (!b.equals(e)) {
-      if (b.get() == val)
+      if (b.get() === val)
         return b;
       b.next();
     }

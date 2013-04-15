@@ -90,14 +90,18 @@ define(function() {
   };
 
   var line = function(normal, w) {
-    this.normal = normal.clone();
+    this.normal = normal;
     this.w = w;
   };
 
   line.prototype = {
 
     clone : function() {
-      return new line(this.normal, this.w);
+      return new line(this.normal.clone(), this.w);
+    },
+
+    equals : function(l) {
+      return this.normal.equals(l.normal) && this.w === l.w;
     },
 
     flip : function() {
@@ -156,6 +160,10 @@ define(function() {
 
     clone : function() {
       return new segment(this.start.clone(), this.end.clone());
+    },
+
+    equals : function(seg) {
+      return this.start.equals(seg.start) && this.end.equals(seg.end);
     },
 
     flip : function() {

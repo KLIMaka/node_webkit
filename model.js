@@ -41,7 +41,7 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
       }
     });
     this.adj.clear();
-  }
+  };
 
 
   var Segment2D = Math2d.segment;
@@ -77,6 +77,71 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
 
   Segment.prototype.hasVertex = function(vtx) {
     return this.start.equals(vtx) || this.end.equals(vtx);
+  };
+
+  var Sector = function(segs, order) {
+    this.segs = new List();
+    this.order = order;
+
+    var self = this;
+    var prevSeg = null;
+    STL.transform_copy(segs.begin(), segs.end(), new STL.Inserter(this.segs), function(seg) {
+      if (prevSeg != null) {
+        order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);
+      }
+      if (order) seg.front = this;
+      else seg.back = this;
+      prevSeg = seg;
+    });
+  };
+
+  Sector.prototype.getFirstSegment = function(vtx) {
+    return STL.find_if(this.segs.begin(), this.segs.end(), function(seg) { return seg.hasVertex(vtx)  });
+  };
+
+  Sector.prototype.getEdge = function(vtx) {
+
+    var seg_iter = this.getFirstSegment(vtx);
+    if (seg_iter.equals(this.segs.end())) return null;
+
+    var seg = seg_iter.get();
+    var next = seg_iter.next();
+
+    if (seg_iter.equals(this.segs.begin())) {
+      if (!next.hasVertex(vtx)) {
+        var last = this.segs.last().obj;
+        return [(last.start === vtx ? last.end : last.start), vtx, (seg.start === vtx ? seg.end : seg.start)];
+      }
+    }
+
+    return [(seg.start === vtx ? seg.end : seg.start), vtx, (next.start === vtx ? next.end : next.start)];
+  };
+
+  Sector.prototype.split = function(vtx1, vtx2, seg) {
+
+    var order = this.order;
+    var prevSeg = null;
+    var start_iter = STL.find_if(this.segs.begin(), this.segs.end(), function(seg) {
+      if ((order && (seg.start === vtx1 || seg.start == vtx2)) || (!order && (seg.end === vtx1 || seg.end === vtx2)))
+        return true;
+
+      prevSeg = seg;
+      order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);
+      return false;
+    });
+
+    var start_vtx = start_iter.get().hasVertex(vtx1) ? vtx1 : vtx2;
+    var end_vtx = start_vtx === vtx1 ? vtx2 : vtx1;
+
+    var end_iter = STL.find_if(start_iter, this.segs.end(), function(seg) { return seg.hasVertex(end_vtx); });
+
+    var segs_1 = new List();
+    STL.copy(this.segs.begin(), start_iter, new STL.Inserter(segs_1));
+    STL.copy(end_iter, this.segs.end(), new STL.Inserter(segs_1, segs_1.end()));
+
+    var segs_2 = new List();
+    STL.copy(start_iter, end_iter, new STL.Inserter(segs_2));
+
   };
 
   return {

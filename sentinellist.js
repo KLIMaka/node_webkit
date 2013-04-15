@@ -96,9 +96,7 @@ define(function() {
     },
 
     insert : function(iter, val) {
-      var tmp = iter.get();
-      iter.set(val);
-      this.insertAfter(tmp, iter.ref);
+      return this.inserBefore(val, iter.ref);
     },
 
     _remove : function(ref) {
