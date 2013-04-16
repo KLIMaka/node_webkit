@@ -89,9 +89,10 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
       if (prevSeg != null) {
         order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);
       }
-      if (order) seg.front = this;
-      else seg.back = this;
+      if (order) seg.front = self;
+      else seg.back = self;
       prevSeg = seg;
+      return seg;
     });
   };
 
@@ -133,20 +134,35 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     var start_vtx = start_iter.get().hasVertex(vtx1) ? vtx1 : vtx2;
     var end_vtx = start_vtx === vtx1 ? vtx2 : vtx1;
 
-    var end_iter = STL.find_if(start_iter, this.segs.end(), function(seg) { return seg.hasVertex(end_vtx); });
+    var end_iter = STL.find_if(start_iter.clone(), this.segs.end(), function(seg) { return seg.hasVertex(end_vtx); });
+    end_iter.next();
 
     var segs_1 = new List();
-    STL.copy(this.segs.begin(), start_iter, new STL.Inserter(segs_1));
-    STL.copy(end_iter, this.segs.end(), new STL.Inserter(segs_1, segs_1.end()));
+    if (!this.segs.begin().equals(start_iter))
+      STL.copy(this.segs.begin(), start_iter, new STL.Inserter(segs_1));
+    STL.copy(end_iter.clone(), this.segs.end(), new STL.Inserter(segs_1, segs_1.end()));
+    segs_1.push(seg);
+    this.segs = segs_1;
+    this.order = segs_1.first().obj.front === this;
+
+    if (start_vtx === vtx1) seg.front = this;
+    else                    seg.back  = this;
 
     var segs_2 = new List();
-    STL.copy(start_iter, end_iter, new STL.Inserter(segs_2));
+    STL.copy(start_iter.clone(), end_iter, new STL.Inserter(segs_2));
+    segs_2.push(seg);
 
+    return new Sector(segs_2, start_vtx === segs_2.first().obj.start);
   };
+
+  Sector.prototype.toString = function() {
+    return this.segs.toString();
+  }
 
   return {
     Vertex : Vertex,
-    Segment : Segment
+    Segment : Segment,
+    Sector : Sector,
   };
 
 });

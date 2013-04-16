@@ -30,6 +30,10 @@ define(function() {
 
   ListIterator.prototype = {
 
+    clone : function() {
+      return new ListIterator(this.list, this.ref);
+    },
+
     next : function() {
       var obj = this.ref.obj;
       this.ref = this.ref.next;
@@ -96,7 +100,7 @@ define(function() {
     },
 
     insert : function(iter, val) {
-      return this.inserBefore(val, iter.ref);
+      return this.insertBefore(val, iter.ref);
     },
 
     _remove : function(ref) {
