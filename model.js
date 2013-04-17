@@ -79,20 +79,88 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     return this.start.equals(vtx) || this.end.equals(vtx);
   };
 
-  var Sector = function(segs, order) {
+  Segment.prototype.toString = function() {
+    return Segment2D.prototype.toString.call(this) + '(' + (this.front && this.front.tag) + '|' + (this.back && this.back.tag) + ')';
+  };
+
+  var ord_seg_adapter = function(seg, order) {
+    this.seg = seg;
+    this.order = order;
+  };
+
+  ord_seg_adapter.prototype = {
+
+    get : function() {
+      return this.seg;
+    },
+
+    getStart : function() {
+      return this.order ? this.seg.start : this.seg.end;
+    },
+
+    getEnd : function() {
+      return this.order ? this.seg.end : this.seg.start;
+    },
+
+    setFront : function(front) {
+      if (this.order)
+        this.seg.front = front;
+      else
+        this.seg.back = front;
+    },
+
+    setBack : function(back) {
+      if (this.order)
+        this.seg.back = back;
+      else
+        this.seg.front = back;
+    }
+  };
+
+  var odr_seg_iter = function(iter, order) {
+    this.iter = iter;
+    this.order = order;
+  };
+
+  odr_seg_iter.prototype = {
+
+    equals : function(iter) {
+      return this.iter.equals(iter);
+    },
+
+    clone : function() {
+      return new odr_seg_iter(this.iter, this.order);
+    },
+
+    get : function() {
+      return new ord_seg_adapter(this.iter.get(), this.order);
+    },
+
+    getIter : function() {
+      return this.iter;
+    },
+
+    next : function() {
+      var prevSeg = this.iter.next();
+      var ret = new ord_seg_adapter(prevSeg, this.order);
+
+      var seg = this.iter.get();
+      if (seg)
+        this.order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);  
+      return ret;
+    },
+  };
+
+  var Sector = function(segs, order, tag) {
     this.segs = new List();
     this.order = order;
+    this.tag = tag;
 
     var self = this;
     var prevSeg = null;
-    STL.transform_copy(segs.begin(), segs.end(), new STL.Inserter(this.segs), function(seg) {
-      if (prevSeg != null) {
-        order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);
-      }
-      if (order) seg.front = self;
-      else seg.back = self;
-      prevSeg = seg;
-      return seg;
+    STL.transform_copy(new odr_seg_iter(segs.begin(), order), segs.end(), new STL.Inserter(this.segs), function(seg_adapter) {
+      seg_adapter.setFront(self);
+      return seg_adapter.get();
     });
   };
 
@@ -118,45 +186,40 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     return [(seg.start === vtx ? seg.end : seg.start), vtx, (next.start === vtx ? next.end : next.start)];
   };
 
-  Sector.prototype.split = function(vtx1, vtx2, seg) {
+  Sector.prototype.split = function(vtx1, vtx2, tag) {
 
-    var order = this.order;
-    var prevSeg = null;
-    var start_iter = STL.find_if(this.segs.begin(), this.segs.end(), function(seg) {
-      if ((order && (seg.start === vtx1 || seg.start == vtx2)) || (!order && (seg.end === vtx1 || seg.end === vtx2)))
-        return true;
-
-      prevSeg = seg;
-      order = (prevSeg.end === seg.start) || (prevSeg.start === seg.start);
-      return false;
-    });
+    var start_iter = STL.find_if(new odr_seg_iter(this.segs.begin(), this.order), this.segs.end(), function(seg_adapter) {
+      return seg_adapter.getStart() === vtx1 || seg_adapter.getStart() === vtx2;
+    }).getIter();
 
     var start_vtx = start_iter.get().hasVertex(vtx1) ? vtx1 : vtx2;
     var end_vtx = start_vtx === vtx1 ? vtx2 : vtx1;
 
-    var end_iter = STL.find_if(start_iter.clone(), this.segs.end(), function(seg) { return seg.hasVertex(end_vtx); });
+    var seg = new Segment(vtx1, vtx2);
+    if (start_vtx === vtx1) seg.front = this;
+    else                    seg.back  = this;
+
+    var end_iter = STL.find_if(start_iter, this.segs.end(), function(seg) { return seg.hasVertex(end_vtx); });
     end_iter.next();
 
     var segs_1 = new List();
     if (!this.segs.begin().equals(start_iter))
       STL.copy(this.segs.begin(), start_iter, new STL.Inserter(segs_1));
-    STL.copy(end_iter.clone(), this.segs.end(), new STL.Inserter(segs_1, segs_1.end()));
     segs_1.push(seg);
+    STL.copy(end_iter, this.segs.end(), new STL.Inserter(segs_1, segs_1.end()));
+    
     this.segs = segs_1;
     this.order = segs_1.first().obj.front === this;
 
-    if (start_vtx === vtx1) seg.front = this;
-    else                    seg.back  = this;
-
     var segs_2 = new List();
-    STL.copy(start_iter.clone(), end_iter, new STL.Inserter(segs_2));
+    STL.copy(start_iter, end_iter, new STL.Inserter(segs_2));
     segs_2.push(seg);
 
-    return new Sector(segs_2, start_vtx === segs_2.first().obj.start);
+    return new Sector(segs_2, start_vtx === segs_2.first().obj.start, tag);
   };
 
   Sector.prototype.toString = function() {
-    return this.segs.toString();
+    return this.tag + ':' + this.segs.toString();
   }
 
   return {

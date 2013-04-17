@@ -77,6 +77,7 @@ define(function() {
   // Alghoritms
 
   exports.advance = function(iter, steps) {
+    iter = iter.clone();
     while (steps-- != 0)
       iter.next();
     return iter;
@@ -84,6 +85,7 @@ define(function() {
 
   exports.distance = function(i1, i2) {
     var dist = 0;
+    i1 = i1.clone();
     while (!i1.equals(i2)) {
       i1.next();
       dist++;
@@ -98,6 +100,8 @@ define(function() {
   };
 
   exports.copy = function(ib, ie, ob) {
+    ob = ob.clone();
+    ib = ib.clone();
     while (!ib.equals(ie)) {
       ob.set(ib.next());
       ob.next();
@@ -106,6 +110,7 @@ define(function() {
   };
 
   exports.transform = function(b, e, func) {
+    b = b.clone();
     while (!b.equals(e)) {
       b.set(func(b.get()));
       b.next();
@@ -113,6 +118,8 @@ define(function() {
   };
 
   exports.copy_if = function(ib, ie, ob, pred) {
+    ib = ib.clone();
+    ob = ob.clone();
     while (!ib.equals(ie)) {
       var val = ib.next();
       if (pred(val)) {
@@ -124,6 +131,8 @@ define(function() {
   };
 
   exports.transform_copy = function(ib, ie, ob, func) {
+    ib = ib.clone();
+    ob = ob.clone();
     while (!ib.equals(ie)) {
       ob.set(func(ib.next()));
       ob.next();
@@ -132,12 +141,14 @@ define(function() {
   };
 
   exports.apply = function(b, e, func) {
+    b = b.clone();
     while (!b.equals(e)) {
       func(b.next());
     }
   };
 
   exports.rotate = function(b, m, e) {
+    b = b.clone();
     var next = m.clone();
     while (!b.equals(next)) {
       exports.swap(b, next);
@@ -149,6 +160,7 @@ define(function() {
   }
 
   exports.find = function(b, e, val) {
+    b = b.clone();
     while (!b.equals(e)) {
       if (b.get() === val)
         return b;
@@ -158,6 +170,7 @@ define(function() {
   };
 
   exports.find_if = function(b, e, pred) {
+    b = b.clone();
     while (!b.equals(e)) {
       if (pred(b.get()))
         return b;
@@ -167,6 +180,7 @@ define(function() {
   }
 
   exports.toArray = function(b, e) {
+    b = b.clone();
     var ret = [];
     while (!b.equals(e)) {
       ret.push(b.next());

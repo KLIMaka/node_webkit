@@ -18,8 +18,8 @@ requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model'], function(foo,
   var s3 = new Seg(v3, v4);
   var s4 = new Seg(v4, v1);
 
-  var sec1 = new Sec([s1, s2, s3, s4], true);
-  var sec2 = sec1.split(v1, v3, new Seg(v1, v3));
+  var sec1 = new Sec([s1, s2, s3, s4], true, 's1');
+  var sec2 = sec1.split(v2, v4, 's2');
 
   println(sec1);
   println(sec2);
