@@ -174,7 +174,9 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     if (seg_iter.equals(this.segs.end())) return null;
 
     var seg = seg_iter.get();
-    var next = seg_iter.next();
+    var tmp_iter = seg_iter.clone();
+    tmp_iter.next();
+    var next = tmp_iter.get();
 
     if (seg_iter.equals(this.segs.begin())) {
       if (!next.hasVertex(vtx)) {
@@ -186,8 +188,10 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     return [(seg.start === vtx ? seg.end : seg.start), vtx, (next.start === vtx ? next.end : next.start)];
   };
 
-  Sector.prototype.split = function(vtx1, vtx2, tag) {
+  Sector.prototype.split = function(seg, tag) {
 
+    var vtx1 = seg.start;
+    var vtx2 = seg.end;
     var start_iter = STL.find_if(new odr_seg_iter(this.segs.begin(), this.order), this.segs.end(), function(seg_adapter) {
       return seg_adapter.getStart() === vtx1 || seg_adapter.getStart() === vtx2;
     }).getIter();
@@ -195,7 +199,6 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     var start_vtx = start_iter.get().hasVertex(vtx1) ? vtx1 : vtx2;
     var end_vtx = start_vtx === vtx1 ? vtx2 : vtx1;
 
-    var seg = new Segment(vtx1, vtx2);
     if (start_vtx === vtx1) seg.front = this;
     else                    seg.back  = this;
 
@@ -222,10 +225,124 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     return this.tag + ':' + this.segs.toString();
   }
 
+  var Level = function() {
+    this.vtxs = new List();
+    this.segs = new List();
+    this.secs = new List();
+  };
+
+  Level.prototype = {
+
+    findVertex : function(vtx) {
+      return STL.find_if(this.vtxs.begin(), this.vtxs.end(), function(vtx1) { return vtx.equals(vtx1); });
+    },
+
+    onSegment : function(vtx) {
+      return STL.find_if(this.segs.begin(), this.segs.end(), function(seg) { return seg.contain(vtx); });
+    },
+
+    getContainigSector : function(seg) {
+      return STL.find_if(this.secs.begin(), this.secs.end(), function(sec) {
+        var e1 = sec.getEdge(seg.start);
+        var e2 = sec.getEdge(seg.end);
+        if (e1 != null && e2 != null) 
+          return e1[1].angle(e1[0], e1[2]) > e1[1].angle(e1[0], seg.end) && e2[1].angle(e2[0], e2[2]) > e2[1].angle(e2[0], seg.start);
+        return false;
+      });
+    },
+
+    addSegment : function(seg) {
+      this.segs.push(seg);
+    },
+
+    addVertex : function(x, y) {
+
+      var vtx = new Vertex(x ,y);
+      var vtx_iter = this.findVertex(vtx);
+      if (!vtx_iter.equals(this.vtxs.end()))
+        return vtx_iter.get();
+
+      this.vtxs.push(vtx);
+
+      var seg_iter = this.onSegment(vtx);
+      if (!seg_iter.equals(this.segs.end())) {
+        var seg = seg_iter.get();
+        var a = new Segment(seg.start, vtx, seg.front, seg.back);
+        var b = new Segment(vtx, seg.end, seg.front, seg.back);
+        
+        if (seg.front) {
+          var front_segs = seg.front.segs;
+          var front_seg_iter = STL.find(front_segs.begin(), front_segs.end(), seg);
+          var ab = [a, b];
+          STL.copy(ab.begin(), ab.end(), new STL.Inserter(front_segs, front_seg_iter));
+          front_segs.remove(front_seg_iter);
+        }
+        if (seg.back) {
+          var back_segs = seg.back.segs;
+          var back_seg_iter = STL.find(back_segs.begin(), back_segs.end(), seg);
+          var ba = [b, a];
+          STL.copy(ba.begin(), ba.end(), new STL.Inserter(back_segs, back_seg_iter));
+          back_segs.remove(back_seg_iter);
+        }
+
+        this.segs.remove(seg_iter);
+        this.addSegment(a);
+        this.addSegment(b);
+      }
+
+      return vtx;
+    },
+
+    addSector : function(vtxs, tag) {
+
+      var pts = [];
+      var self = this;
+      STL.transform_copy(vtxs.begin(), vtxs.end(), pts.begin(), function(vtx) { 
+        return self.addVertex(vtx[0], vtx[1]); 
+      });
+
+      var order = true;
+      var segs = [];
+      for (var i = 0; i < pts.length; i++) {
+        var a = pts[i];
+        var b = pts[i+1 == pts.length ? 0 : i+1];
+        var seg = a.isAdjacent(b);
+        if (seg == null) {
+          seg = new Segment(a, b, null, null);
+          this.addSegment(seg);
+        } else if (i == 0 && seg.start !== a) {
+          order = false;
+        }
+        segs.push(seg);
+      }
+
+      var sec = new Sector(segs, order, tag);
+      this.secs.push(sec);
+      return sec;
+    },
+
+    splitSector : function(vtx1, vtx2, tag) {
+
+      var seg = new Segment(vtx1, vtx2);
+      var sec_iter = this.getContainigSector(seg);
+      if (sec_iter.equals(this.secs.end())) {
+        seg.remove();
+        return null;
+      }
+
+      var new_sector = sec_iter.get().split(seg, tag);
+      this.addSegment(seg);
+      this.secs.push(new_sector);
+      return new_sector;
+    }
+
+  };
+
   return {
     Vertex : Vertex,
     Segment : Segment,
     Sector : Sector,
+    Level : Level
   };
 
 });
