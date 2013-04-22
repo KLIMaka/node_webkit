@@ -334,15 +334,25 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
       this.addSegment(seg);
       this.secs.push(new_sector);
       return new_sector;
-    }
+    },
+
+    joinSectors : function(sec1, sec2) {
+
+      var common_start_iter = STL.find_if(sec1.segs.begin(), sec1.segs.end(), function(seg) {
+        return seg.front === sec2 || seg.back === sec2;
+      });
+      var common_end_iter = STL.find_if(common_start_iter, sec1.segs.end(), function(seg) {
+        return seg.front !== sec2 || seg.back !== sec2;
+      });
+    },
 
   };
 
   return {
-    Vertex : Vertex,
+    Vertex  : Vertex,
     Segment : Segment,
-    Sector : Sector,
-    Level : Level
+    Sector  : Sector,
+    Level   : Level
   };
 
 });

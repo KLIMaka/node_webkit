@@ -20,5 +20,5 @@ requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model'], function(foo,
   lvl.splitSector(v3, v4, 's3');
 
   stl.apply(lvl.secs.begin(), lvl.secs.end(), function(sec) { println(sec); });
-
+  
 });
