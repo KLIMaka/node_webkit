@@ -177,24 +177,7 @@ define(function() {
     toString : function() {
       return '[' + this.toArray().join(', ') + ']';
     },
-
-    findObj : function(obj) {
-      var curr = this.first();
-      while (curr !== this.nil && curr.obj !== obj)
-        curr = curr.next;
-      if (curr !== this.nil)
-        return new ListIterator(this, curr);
-      return null;
-    },
-
-    find : function(pred) {
-      var curr = this.first();
-      while (curr !== this.nil && !pred(curr))
-        curr = curr.next;
-      if (curr !== this.nil)
-        return new ListIterator(this, curr);
-      return null;
-    }
+    
   };
 
   return SentinelList;

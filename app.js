@@ -1,4 +1,4 @@
-requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model'], function(foo, stl, List, math2d, Model) {
+requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model', 'lib/gl-matrix'], function(foo, stl, List, math2d, Model, Matrix) {
 
   function println(val) {
     window.document.write(val + '<br>');
@@ -21,4 +21,5 @@ requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model'], function(foo,
 
   stl.apply(lvl.secs.begin(), lvl.secs.end(), function(sec) { println(sec); });
   
+  println(Matrix.vec2);
 });

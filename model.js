@@ -9,7 +9,7 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
   Vertex.prototype = new Vertex2D(0,0);
 
   Vertex.prototype.clone = function() {
-    var vtx = new Vertex(this.x, this.y);
+    var vtx = new Vertex(this.x(), this.y());
     STL.copy(this.adj.begin(), this.adj.end(), new STL.Inserter(vtx.adj));
     return vtx;
   }

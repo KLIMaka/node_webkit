@@ -1,78 +1,95 @@
-define(function() {
+define(['lib/gl-matrix'], function(GLMatrix) {
 
   var EPSILON = 1e-5;
+  var vec2 = GLMatrix.vec2;
 
   var vector = function(x, y) {
-    this.x = x;
-    this.y = y == undefined ? x : y;
+    this.data = vec2.fromValues(x, y == undefined ? x : y);
   };
 
   vector.prototype = {
 
     clone : function() {
-      return new vector(this.x, this.y);
+      return new vector(this.data[0], this.data[1]);
+    },
+
+    x : function() {
+      return this.data[0];
+    },
+
+    setX : function(x) {
+      this.data[0] = x;
+    },
+
+    y : function() {
+      return this.data[1];
+    },
+
+    setY : function(y) {
+      this.data[1] = y;
+    },
+
+    set : function(x, y) {
+      vec2.set(this.data, x ,y == undefined ? x : y);
     },
 
     equals : function(vec) {
-      return this.x === vec.x && this.y === vec.y;
+      var d1 = this.data, d2 = vec.data;
+      return d1[0] === d2[0] && d1[1] === d2[1];
     },
 
     toString : function() {
-      return '[' + this.x + ', ' + this.y + ']';
+      return vec2.str(this.data);
     },
 
     add : function(vec) {
-      this.x += vec.x;
-      this.y += vec.y;
+      vec2.add(this.data, this.data, vec.data);
       return this;
     },
 
     sub : function(vec) {
-      this.x -= vec.x;
-      this.y -= vec.y;
+      vec2.sub(this.data, this.data, vec.data);
       return this;
     },
 
     scale : function(s) {
-      this.x *= s;
-      this.y *= s;
+      vec2.scale(this.data, this.data, s);
       return this;
     },
 
     dot : function(vec) {
-      return this.x * vec.x + this.y * vec.y;
+      return vec2.dot(this.data, vec.data);
     },
 
     sqlength : function() {
-      return this.dot(this);
+      return vec2.sqrLen(this.data);
     },
 
     length : function() {
-      return Math.sqrt(this.sqlength());
+      return vec2.len(this.data);
     },
 
     normalize : function() {
-      var len = this.length();
-      return this.scale(1.0 / len);
+      vec2.normalize(this.data, this.data);
+      return this;
     },
 
     negate : function() {
-      this.x = -this.x;
-      this.y = -this.y;
+      vec2.negate(this.data, this.data);
       return this;
     },
 
     ortho : function() {
-      var tmp = this.x;
-      this.x = -this.y;
-      this.y = tmp;
+      var tmp = this.data[0];
+      this.data[0] = -this.data[1];
+      this.data[1] = tmp;
       return this;
     },
 
     ang : function() {
       var unit = this.clone().normalize();
-      var ang = (180 / Math.PI) * Math.acos(unit.x);
-      ang = unit.y < 0 ? 360 - ang : ang;
+      var ang = (180 / Math.PI) * Math.acos(unit.x());
+      ang = unit.y() < 0 ? 360 - ang : ang;
       return -ang;
     }
   };
@@ -83,8 +100,8 @@ define(function() {
 
   vertex.prototype = new vector(0, 0);
   vertex.prototype.angle = function(a, b) {
-    var toA = new vector(a.x - this.x, a.y - this.y);
-    var toB = new vector(b.x - this.x, b.y - this.y);
+    var toA = vecsub(a, this);
+    var toB = vecsub(b, this);
     var ang = toB.ang() - toA.ang();
     return ang < 0 ? 360 + ang : ang;
   };
@@ -111,12 +128,12 @@ define(function() {
 
     intersect : function(line) {
 
-      var r = this.normal.x * line.normal.y - line.normal.x * this.normal.y;
+      var r = this.normal.x() * line.normal.y() - line.normal.x() * this.normal.y();
       if (r == 0.0)
         return null;
 
-      var x = (this.normal.y * line.w - line.normal.y * this.w) / r;
-      var y = (this.w * line.normal.x - line.w * this.normal.x) / r;
+      var x = (this.normal.y() * line.w - line.normal.y() * this.w) / r;
+      var y = (this.w * line.normal.x() - line.w * this.normal.x()) / r;
       return new vertex(x, y);
     },
 
