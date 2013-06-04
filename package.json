@@ -1,6 +1,6 @@
 {
   "name": "nw-demo",
-  "main": "gpulightmap.html",
+  "main": "index.html",
   "window": {
     "toolbar": true,
     "width": 660,

@@ -1,25 +1,29 @@
-requirejs( [ 'module1', 'stl', 'sentinellist', 'math2d', 'model', 'lib/gl-matrix'], function(foo, stl, List, math2d, Model, Matrix) {
+requirejs( [ 'parser'], function(Parser) {
 
   function println(val) {
     window.document.write(val + '<br>');
   }
+
+  var Matcher = Parser.Matcher;
+  var Rule = Parser.Rule;
+
+  var def =
+  "WS  : '[ \t]'                   \n"+
+  "ID  : '[a-zA-Z_][a-zA-Z_0-9]*'  \n"+
+  "INT : '[0-9]+'                  \n"+
+  "HEX : '0x[0-9a-fA-F]+'          \n"
+  ;
   
-  var Vtx = Model.Vertex;
-  var Seg = Model.Segment;
-  var Sec = Model.Sector;
-  var Lvl = Model.Level;
+  var defParser = new Matcher();
+  defParser.addRule(/^[A-Z]+/,     'ID');
+  defParser.addRule(/^:/,          'COL');
+  defParser.addRule(/^\n/,         'NL');
+  defParser.addRule(/^[ \t]+/,     'WS');
 
-  var lvl = new Lvl();
+  m.setSource(def);
 
-  lvl.addSector([[0,0], [20,0], [20,20], [0,20]], 's1');
-  var v1 = lvl.addVertex(10, 0);
-  var v2 = lvl.addVertex(10, 20);
-  lvl.splitSector(v1, v2, 's2');
-  var v3 = lvl.addVertex(10, 10);
-  var v4 = lvl.addVertex(0, 10);
-  lvl.splitSector(v3, v4, 's3');
-
-  stl.apply(lvl.secs.begin(), lvl.secs.end(), function(sec) { println(sec); });
+  while(m.next() != null) {
+    println('\'' + m.value() + '\' - ' + m.rule().name);
+  }
   
-  println(Matrix.vec2);
 });
