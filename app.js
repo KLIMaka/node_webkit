@@ -17,7 +17,7 @@ requirejs( ['parser'], function(P) {
   "ID  : '[a-zA-Z_][a-zA-Z_0-9]*'  \n"+
   "INT : '[0-9]+'                  \n"+
   "HEX : '0x[0-9a-fA-F]+'          \n"+
-  "REF : ID                        \n"
+  "REF : ID                        \n"+
   ;
   
   var defLex = new Lexer();
@@ -29,23 +29,18 @@ requirejs( ['parser'], function(P) {
   defLex.addRule(new LexerRule(/^'[^']*'+/,   'RULE'));
   defLex.setSource(def);
 
-  var ctx = {};
   var p = new Parser(defLex, {'WS':0});
-  var ID = new BPR('ID', 'id');
-  var RULE = new BPR('RULE', 'rule');
+  var ID = new SPR('ID');
+  var RULE = new SPR('RULE');
   var COL = new SPR('COL');
   var SCOL = new SPR('SCOL');
   var NL = new SPR('NL');
-  var r = new And(new And(ID, new And(new Or(COL, SCOL), new Or(RULE, ID))), NL);
 
-  println(p.exec(r, ctx));
-  console.log(ctx);
-  println(p.exec(r, ctx));
-  console.log(ctx);
-  println(p.exec(r, ctx));
-  console.log(ctx);
-  println(p.exec(r, ctx));
-  console.log(ctx);
-  println(p.exec(r, ctx));
-  console.log(ctx);
+  var r = new And([new BPR('id', ID), new Or([COL, SCOL]), new BPR('val', new Or([RULE, ID])), NL]);
+
+  console.log(p.exec(r));
+  console.log(p.exec(r));
+  console.log(p.exec(r));
+  console.log(p.exec(r));
+  console.log(p.exec(r));
 });

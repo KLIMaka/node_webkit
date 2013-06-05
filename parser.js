@@ -106,54 +106,64 @@ define(['stl'], function(STL) {
   }
 
   SimpleParserRule.prototype = {
-    match : function(parser, ctx) {
+    match : function(parser) {
       if (parser.lex.rule().name != this.id)
-        return false;
-      return true;
+        return null;
+      return parser.lex.value();
     }
   }
 
-  function BindingParserRule(id, name) {
-    this.id = id;
+  function BindingParserRule(name, rule) {
     this.name = name;
+    this.rule = rule;
   }
 
   BindingParserRule.prototype = {
-    match : function(parser, ctx) {
-      if (parser.lex.rule().name != this.id)
-        return false;
-      ctx[this.name] = parser.lex.value();
-      return true;
+    match : function(parser) {
+      var res = this.rule.match(parser);
+      if (res == null)
+        return null;
+      var ctx = {};
+      ctx[this.name] = res;
+      return ctx;
     }
   }
 
-  function OrRule(lh, rh) {
-    this.lh = lh;
-    this.rh = rh;
+  function OrRule(rules) {
+    this.rules = rules;
   }
 
   OrRule.prototype = {
-    match : function(parser, ctx) {
+    match : function(parser) {
       var mark = parser.lex.mark();
-      if (this.lh.match(parser, ctx) == false) {
-        parser.lex.reset(mark);
-        return this.rh.match(parser, ctx);
+      for (var i = 0; i < this.rules.length; i++) {
+        var rule = this.rules[i];
+        var res = rule.match(parser);
+        if (res == null)
+          continue;
+        return res;
       }
-      return true;
+      return null;
     }
   }
 
-  function AndRule(lh, rh) {
-    this.lh = lh;
-    this.rh = rh;
+  function AndRule(rules) {
+    this.rules = rules;
   }
 
   AndRule.prototype = {
-    match : function(parser, ctx) {
-      if (this.lh.match(parser, ctx) == false)
-        return false;
-      parser.next();
-      return this.rh.match(parser, ctx);
+    match : function(parser) {
+      var arr = new Array(this.rules.length);
+      for (var i = 0; i < this.rules.length; i++) {
+        var rule = this.rules[i];
+        var res = rule.match(parser);
+        if (res == null)
+          return null;
+        arr[i] = res;
+        if (i != arr.length-1)
+          parser.next();
+      }
+      return arr;
     }
   }
 
@@ -165,9 +175,9 @@ define(['stl'], function(STL) {
 
   Parser.prototype = {
 
-    exec : function(rule, ctx) {
+    exec : function(rule) {
       this.next();
-      return rule.match(this, ctx);
+      return rule.match(this);
     },
 
     next : function() {
