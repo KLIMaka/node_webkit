@@ -1,20 +1,21 @@
 define(['stl'], function(STL) {
 
-  function Rule(patt, name) {
+  function LexerRule(patt, name) {
     this.pattern = patt;
     this.name = name;
   }
    
-  Rule.prototype = {
+  LexerRule.prototype = {
   }
 
-  function Matcher() {
+  function Lexer() {
  
     this.rulesByName = {};
     this.rulesByPatt = {};
     this.rules = [];
     this.src = '';
     this.offset = 0;
+    this.lastOffset = 0;
     this.eoi = false;
 
     this.matchedRule = null;
@@ -24,7 +25,7 @@ define(['stl'], function(STL) {
     this.rend = new STL.ArrayIterator(this.rules, 0);
   }
 
-  Matcher.prototype = {
+  Lexer.prototype = {
     
     addRule : function(rule) {
       var r = this.rulesByName[rule.name];
@@ -40,6 +41,16 @@ define(['stl'], function(STL) {
       this.rulesByName[rule.name] = rule;
       this.rulesByPatt[rule.patt] = rule;
       this.rend = new STL.ArrayIterator(this.rules, this.rules.length);
+    },
+
+    mark : function() {
+      return this.lastOffset;
+    },
+
+    reset : function(offset) {
+      this.offset = offset || 0;
+      this.eoi = false;
+      return this.next();
     },
     
     setSource : function(src) {
@@ -68,6 +79,7 @@ define(['stl'], function(STL) {
 
       this.matchedRule = matchedRule;
       this.matchedValue = matchedValue;
+      this.lastOffset = this.offset;
       this.offset += len;
 
       if(matchedRule == null || this.offset >= this.src.length)
@@ -89,9 +101,90 @@ define(['stl'], function(STL) {
     }
   }
 
+  function SimpleParserRule(id) {
+    this.id = id;
+  }
+
+  SimpleParserRule.prototype = {
+    match : function(parser, ctx) {
+      if (parser.lex.rule().name != this.id)
+        return false;
+      return true;
+    }
+  }
+
+  function BindingParserRule(id, name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  BindingParserRule.prototype = {
+    match : function(parser, ctx) {
+      if (parser.lex.rule().name != this.id)
+        return false;
+      ctx[this.name] = parser.lex.value();
+      return true;
+    }
+  }
+
+  function OrRule(lh, rh) {
+    this.lh = lh;
+    this.rh = rh;
+  }
+
+  OrRule.prototype = {
+    match : function(parser, ctx) {
+      var mark = parser.lex.mark();
+      if (this.lh.match(parser, ctx) == false) {
+        parser.lex.reset(mark);
+        return this.rh.match(parser, ctx);
+      }
+      return true;
+    }
+  }
+
+  function AndRule(lh, rh) {
+    this.lh = lh;
+    this.rh = rh;
+  }
+
+  AndRule.prototype = {
+    match : function(parser, ctx) {
+      if (this.lh.match(parser, ctx) == false)
+        return false;
+      parser.next();
+      return this.rh.match(parser, ctx);
+    }
+  }
+
+  function Parser(lexer, skip) {
+    this.lex = lexer;
+    this.skip = skip || {};
+    this.rules = [];
+  }
+
+  Parser.prototype = {
+
+    exec : function(rule, ctx) {
+      this.next();
+      return rule.match(this, ctx);
+    },
+
+    next : function() {
+      var lex = this.lex;
+      var skip = this.skip;
+      while(skip[lex.next()] != undefined);
+    }
+  }
+
   return {
-    Matcher : Matcher,
-    Rule    : Rule
+    Lexer             : Lexer,
+    LexerRule         : LexerRule,
+    Parser            : Parser,
+    SimpleParserRule  : SimpleParserRule,
+    BindingParserRule : BindingParserRule,
+    AndRule           : AndRule,
+    OrRule            : OrRule
   };
 
 });
