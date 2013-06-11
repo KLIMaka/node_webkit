@@ -11,13 +11,14 @@ requirejs( ['parser'], function(P) {
   var And = P.AndRule;
   var Or = P.OrRule;
   var SPR = P.SimpleParserRule;
+  var Count = P.CountRule;
 
   var def =
   "WS  ; '[ \t]'                   \n"+
   "ID  : '[a-zA-Z_][a-zA-Z_0-9]*'  \n"+
   "INT : '[0-9]+'                  \n"+
   "HEX : '0x[0-9a-fA-F]+'          \n"+
-  "REF : ID                        \n"+
+  "REF : ID                        \n"
   ;
   
   var defLex = new Lexer();
@@ -36,11 +37,7 @@ requirejs( ['parser'], function(P) {
   var SCOL = new SPR('SCOL');
   var NL = new SPR('NL');
 
-  var r = new And([new BPR('id', ID), new Or([COL, SCOL]), new BPR('val', new Or([RULE, ID])), NL]);
+  var r = new Count(new And([new BPR('id', ID), new Or([COL, SCOL]), new BPR('val', new Or([RULE, ID])), NL]), 1, 0);
 
-  console.log(p.exec(r));
-  console.log(p.exec(r));
-  console.log(p.exec(r));
-  console.log(p.exec(r));
-  console.log(p.exec(r));
+  console.log(p.exec(r).get());
 });

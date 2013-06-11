@@ -82,8 +82,11 @@ define(['stl'], function(STL) {
       this.lastOffset = this.offset;
       this.offset += len;
 
-      if(matchedRule == null || this.offset >= this.src.length)
+      if(this.offset >= this.src.length)
         this.eoi = true;
+
+      if (matchedRule == null)
+        throw new Error('Unexpected input "'+ subsrc.substr(0, 10) + '..."');
 
       return matchedRule != null ? matchedRule.name : null;
     },
@@ -101,6 +104,30 @@ define(['stl'], function(STL) {
     }
   }
 
+  function Capture(val, name) {
+    this.val = val;
+    this.name = name;
+  }
+
+  Capture.prototype = {
+    isValid : function() {
+      return this.val != null;
+    },
+
+    get : function(ctx) {
+      var ctx = ctx || {};
+      if (this.name) {
+        ctx[this.name] = this.val;
+        return ctx;
+      } else {
+        return this.val;
+      }
+    },
+  }
+
+  var InvalidCapture = new Capture(null);
+  function capture(val, name) { return new Capture(val, name);}
+
   function SimpleParserRule(id) {
     this.id = id;
   }
@@ -108,8 +135,8 @@ define(['stl'], function(STL) {
   SimpleParserRule.prototype = {
     match : function(parser) {
       if (parser.lex.rule().name != this.id)
-        return null;
-      return parser.lex.value();
+        return InvalidCapture;
+      return capture(parser.lex.value());
     }
   }
 
@@ -121,11 +148,9 @@ define(['stl'], function(STL) {
   BindingParserRule.prototype = {
     match : function(parser) {
       var res = this.rule.match(parser);
-      if (res == null)
-        return null;
-      var ctx = {};
-      ctx[this.name] = res;
-      return ctx;
+      if (!res.isValid())
+        return res;
+      return capture(res.get(), this.name);
     }
   }
 
@@ -135,15 +160,14 @@ define(['stl'], function(STL) {
 
   OrRule.prototype = {
     match : function(parser) {
-      var mark = parser.lex.mark();
       for (var i = 0; i < this.rules.length; i++) {
         var rule = this.rules[i];
         var res = rule.match(parser);
-        if (res == null)
+        if (!res.isValid())
           continue;
-        return res;
+        return capture(res.get());
       }
-      return null;
+      return InvalidCapture;
     }
   }
 
@@ -153,17 +177,57 @@ define(['stl'], function(STL) {
 
   AndRule.prototype = {
     match : function(parser) {
-      var arr = new Array(this.rules.length);
+      var capt = {};
+      var mark = parser.lex.mark();
       for (var i = 0; i < this.rules.length; i++) {
         var rule = this.rules[i];
         var res = rule.match(parser);
-        if (res == null)
-          return null;
-        arr[i] = res;
-        if (i != arr.length-1)
+        if (!res.isValid()) {
+          parser.lex.reset(mark);
+          return res;
+        }
+        res.get(capt);
+        if (i != this.rules.length-1)
           parser.next();
       }
-      return arr;
+      return capture(capt);
+    }
+  }
+
+  function CountRule(rule, from, to) {
+    this.rule = rule;
+    this.from = from || 0;
+    this.to = to || 0;
+  }
+
+  CountRule.prototype = {
+    match : function(parser) {
+      var arr = [];
+      var i = 0;
+      var begin = parser.lex.mark();
+      var mark = begin;
+      while (true) {
+        if (this.to > 0 && this.to == i) {
+          parser.lex.reset(mark);
+          break;
+        }
+        var latMark = parser.lex.mark();
+        var res = this.rule.match(parser);
+        if (!res.isValid()) {
+          if (i < this.from) {
+            parser.lex.reset(begin);
+            return res;
+          } else {
+            parser.lex.reset(latMark);
+            return capture(arr);
+          }
+        }
+        arr.push(res.get());
+        mark = latMark;
+        parser.next();
+        i++;
+      }
+      return capture(arr);
     }
   }
 
@@ -194,7 +258,8 @@ define(['stl'], function(STL) {
     SimpleParserRule  : SimpleParserRule,
     BindingParserRule : BindingParserRule,
     AndRule           : AndRule,
-    OrRule            : OrRule
+    OrRule            : OrRule,
+    CountRule         : CountRule
   };
 
 });
