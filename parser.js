@@ -88,7 +88,7 @@ define(['stl'], function(STL) {
       if (matchedRule == null)
         throw new Error('Unexpected input "'+ subsrc.substr(0, 10) + '..."');
 
-      return matchedRule != null ? matchedRule.name : null;
+      return matchedRule.name;
     },
     
     next : function() {

@@ -102,6 +102,14 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
       return this.order ? this.seg.end : this.seg.start;
     },
 
+    getFront : function() {
+      return this.order ? this.seg.front : this.seg.back;
+    },
+
+    getBack : function() {
+      return this.order ? this.seg.back : this.seg.front;
+    },
+
     setFront : function(front) {
       if (this.order)
         this.seg.front = front;
@@ -117,19 +125,19 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     }
   };
 
-  var odr_seg_iter = function(iter, order) {
+  var ord_seg_iter = function(iter, order) {
     this.iter = iter;
     this.order = order;
   };
 
-  odr_seg_iter.prototype = {
+  ord_seg_iter.prototype = {
 
     equals : function(iter) {
       return this.iter.equals(iter);
     },
 
     clone : function() {
-      return new odr_seg_iter(this.iter, this.order);
+      return new ord_seg_iter(this.iter, this.order);
     },
 
     get : function() {
@@ -157,11 +165,18 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     this.tag = tag;
 
     var self = this;
-    var prevSeg = null;
-    STL.transform_copy(new odr_seg_iter(segs.begin(), order), segs.end(), new STL.Inserter(this.segs), function(seg_adapter) {
+    STL.transform_copy(new ord_seg_iter(segs.begin(), order), segs.end(), new STL.Inserter(this.segs), function(seg_adapter) {
       seg_adapter.setFront(self);
       return seg_adapter.get();
     });
+  };
+
+  Sector.prototype.getOrientedSegments = function() {
+    var segs = [];
+    STL.apply(new ord_seg_iter(this.segs.begin(), this.order), this.segs.end(), function(seg_adapter) {
+      segs.push(seg_adapter);
+    });
+    return segs;
   };
 
   Sector.prototype.getFirstSegment = function(vtx) {
@@ -192,7 +207,7 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
 
     var vtx1 = seg.start;
     var vtx2 = seg.end;
-    var start_iter = STL.find_if(new odr_seg_iter(this.segs.begin(), this.order), this.segs.end(), function(seg_adapter) {
+    var start_iter = STL.find_if(new ord_seg_iter(this.segs.begin(), this.order), this.segs.end(), function(seg_adapter) {
       return seg_adapter.getStart() === vtx1 || seg_adapter.getStart() === vtx2;
     }).getIter();
 
