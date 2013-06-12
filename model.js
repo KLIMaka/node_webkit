@@ -163,12 +163,30 @@ define(['math2d', 'sentinellist', 'stl'], function(Math2d, List, STL){
     this.segs = new List();
     this.order = order;
     this.tag = tag;
+    this.ceil = 128;
+    this.floor = 0;
 
     var self = this;
     STL.transform_copy(new ord_seg_iter(segs.begin(), order), segs.end(), new STL.Inserter(this.segs), function(seg_adapter) {
       seg_adapter.setFront(self);
       return seg_adapter.get();
     });
+  };
+
+  Sector.prototype.getFloor = function() {
+    return this.floor;
+  };
+
+  Sector.prototype.setFloor =  function(floor) {
+    this.floor = floor;
+  };
+
+  Sector.prototype.getCeil = function() {
+    return this.ceil;
+  };
+
+  Sector.prototype.setCeil =  function(ceil) {
+    this.ceil = ceil;
   };
 
   Sector.prototype.getOrientedSegments = function() {

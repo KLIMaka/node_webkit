@@ -1,9 +1,7 @@
 define(['stl'], function(STL){
 
-	function Sector(sector, floor, ceil, inner) {
+	function Sector(sector) {
 		this.modelSector = sector;
-		this.floor = floor;
-		this.ceil = ceil;
 	};
 
 	Sector.prototype = {
@@ -19,8 +17,8 @@ define(['stl'], function(STL){
 				var sy = seg.getStart().y();
 				var ex = seg.getEnd().x();
 				var ey = seg.getEnd().y();
-				var ceil = self.ceil;
-				var floor = self.floor;
+				var ceil = self.modelSector.getCeil();
+				var floor = self.modelSector.getFloor();
 
 				floorPoly.push([sx, sy, floor]);
 				ceilPoly.push([sx, sy, ceil]);
